@@ -1,21 +1,26 @@
 FROM python:3.10-slim
 
-ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
-
+# Set working directory
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3-dev \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# System deps (optional but useful for scientific Python)
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Copy requirements first
+COPY requirements.txt .
 
-COPY . /app
+# Install Python deps
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
+# Install Jupyter Notebook explicitly
+RUN pip install notebook
 
+# Copy project files
+COPY . .
 
+# Expose port for Jupyter
+EXPOSE 8888
+
+# Start Jupyter Notebook
+CMD ["python", "-m", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
