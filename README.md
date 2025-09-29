@@ -4,7 +4,7 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
     speeches_data/           # Extracted speeches (raw/processed text files)
     dockerfile               # Docker configuration to run the project in a container
