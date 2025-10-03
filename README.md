@@ -12,6 +12,7 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
     main.ipynb               # Jupyter Notebook for analysis
     README.md                # Project documentation
     requirements.txt         # Python dependencies
+    jam_2025_06_03_bassell_jam-d-25-00057_sdc1   #A ppendix file describing the data pipeline 
 
 ---
 
