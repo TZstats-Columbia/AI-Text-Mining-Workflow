@@ -15,26 +15,28 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
 
 ---
 
-## Getting Started
+## Project Workflow
 
-1. **Clone the repository**
+Below is a **step-by-step workflow** for analyzing U.S. presidential speeches using topic modeling, clustering, and LLM-based thematic analysis. The workflow leverages **ChatGPT/OpenAI API** and Python-based preprocessing to uncover how topics (e.g., *Economy*) evolve over time.
 
-    git clone <your-repo-url>
-    cd <your-repo-name>
+### 1. Data Ingestion & Topic Modeling Setup
+1. Download the dataset:  
+   `jam_2025_06_03_bassell_jam-d-25-00057_sdc1`  
+2. Unzip the file:  
+   ```bash
+   unzip jam_2025_06_03_bassell_jam-d-25-00057_sdc1.zip
+   ```
+3. Start ChatGPT (or your LLM of choice):
+   - Uplaod the file 'jam_2025_06_03_bassell_jam-d-25-00057_sdc1' and run the followig prompt: Follow the workflow here to analyze the presidential speech data.
+   - When encountering errors (e.g., ValueError), paste them into ChatGPT.
+   - ChatGPT should add HDBSCAN and UMAP manually to ensure clustering works.
 
-2. **Install dependencies** 
+### 2. Initial Topic Table
 
-    pip install -r requirements.txt
 
-3. **Extract the dataset**
 
-    unzip InauguralSpeeches.zip -d speeches_data
 
-4. **Run the notebook**
-
-    jupyter notebook main.ipynb
-
----
+   
 
 ## Run with Docker
 
