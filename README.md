@@ -70,7 +70,7 @@ ChatGPT provided a Python function using .strip() and .split(). After applying t
   1. **Add Inauguration Dates:**
 
      * Create a dictionary mapping each president/speech to their inauguration year.
-     * Paste the list of speech names into ChatGPT and let it complete the table.
+     * Paste the list of speech names into ChatGPT and let it complete the dictionary.
      * Check for missing values.
      * If any presidents are missing, specifically ask ChatGPT for their inauguration years.
 
