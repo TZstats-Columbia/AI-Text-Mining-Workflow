@@ -22,24 +22,80 @@ Below is a **step-by-step workflow** for analyzing U.S. presidential speeches us
 
 ### 1. Data Ingestion & Topic Modeling Setup
 1. Download the dataset:  
-   `jam_2025_06_03_bassell_jam-d-25-00057_sdc1`  
+   `InauguralSpeeches.zip`  
 2. Unzip the file:  
    ```bash
-   unzip jam_2025_06_03_bassell_jam-d-25-00057_sdc1.zip
+   # path to your zipped dataset
+   zip_path = "InauguralSpeeches.zip"
+
+   # extract contents
+   with zipfile.ZipFile(zip_path, 'r') as z:
+       z.extractall("speeches_data")
    ```
 3. Start ChatGPT (or your LLM of choice):
-   - Uplaod the file 'jam_2025_06_03_bassell_jam-d-25-00057_sdc1' and run the followig prompt: Follow the workflow here to analyze the presidential speech data.
+Prompt: Uplaod the file 'jam_2025_06_03_bassell_jam-d-25-00057_sdc1' and run the followig prompt: "Follow the workflow here to analyze the presidential speech data."
+
+Observation:
    - When encountering errors (e.g., ValueError), paste them into ChatGPT.
    - ChatGPT should add HDBSCAN and UMAP manually to ensure clustering works.
+   - ChatGPT should generate an Intertiopic Distance Map, a Topic SWord cores barchart, and a Hierarchical Clustering plot. 
 
 ### 2. Initial Topic Table
+* **Prompt:**
+"Create a table with the following columns: Topic, Name, Topic Definition, and Percentages of Sentences."
+
+* **Observations**
+The initial topic names were mostly generic stopwords (e.g., the, and, of).
+
+* **Next Prompt:**
+Paste the first few lines of the table into ChatGPT and prompt "Improve the table."
+
+* **Observations**
+Removing stopwords before topic modeling using nltk did not solve the issue. ChatGPT suggested an alternative approach — splitting long sentences into smaller chunks.
+
+* **Next Prompt:**
+"Split long sentences into smaller chunks for better topic detection."
+
+* **Observations**
+ChatGPT provided a Python function using .strip() and .split(). After applying this function, the resulting topic table contained meaningful topics (e.g., instead of the, and, of, topics like liberty, freedom, etc. appeared).
+
+
+### 3. LLM-Based Thematic Analysis
+
+* **Prompt:**
+  "Follow this workflow to continue the LLM process: Use the OpenAI API to ask the question — *‘How does the topic of Economy evolve in U.S. politics?’* Then, draw a topic prevalence plot for every 20 years."
+
+* **Observations and Steps:**
+
+  1. **Add Inauguration Dates:**
+
+     * Create a dictionary mapping each president/speech to their inauguration year.
+     * Paste the list of speech names into ChatGPT and let it complete the table.
+     * Check for missing values.
+     * If any presidents are missing, specifically ask ChatGPT for their inauguration years.
+
+  2. **Define `summarize_economy` Function:**
+
+     * Implement a function that uses the OpenAI API to summarize how the *Economy* topic is represented across speeches.
+
+  3. **Keyword Identification and Grouping:**
+
+     * Identify economy-related keywords.
+     * Group speeches into 20-year intervals.
+     * Generate a topic prevalence plot to visualize the evolution of economic themes over time.
+
+* **Next Prompt:**
+  "Print the summary."
+
+* **Observation:**
+  Generate a DataFrame using a `for` loop, where:
+
+  * Column 1 = *Period*
+  * Column 2 = *Summary*
 
 
 
-
-   
-
-## Run with Docker
+### Run with Docker
 
 Alternatively, you can run the project inside Docker.
 
