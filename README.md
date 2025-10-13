@@ -6,13 +6,15 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
 
 ## Project Structure
 
-    speeches_data/                                 # Extracted speeches (raw/processed text files)
+    speeches_data/                                 # Extracted speeches (raw/processed text files + cleaned csv file)
     dockerfile                                     # Docker configuration to run the project in a container
     InauguralSpeeches.zip                          # Zipped dataset of speeches
     main.ipynb                                     # Jupyter Notebook for analysis
     README.md                                      # Project documentation
     requirements.txt                               # Python dependencies
     jam_2025_06_03_bassell_jam-d-25-00057_sdc1     # Appendix file describing the data pipeline 
+    bertopic_presidents                            # Trained modles
+    Gradio.ipynb                                   # Jupyter Notebook for Gradio Interaction
 
 ---
 
