@@ -1,26 +1,24 @@
-FROM python:3.10-slim
+# Use a full Python base image for compatibility
+FROM python:3.13
 
 # Set working directory
 WORKDIR /app
 
-# System deps (optional but useful for scientific Python)
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+# Install system-level dependencies (for hdbscan, umap, etc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libomp-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first
-COPY requirements.txt .
+# Copy everything into container
+COPY . /app
 
-# Install Python deps
+# Upgrade pip and install dependencies
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Jupyter Notebook explicitly
-RUN pip install notebook
-
-# Copy project files
-COPY . .
-
-# Expose port for Jupyter
+# Expose port for Jupyter Notebook
 EXPOSE 8888
 
-# Start Jupyter Notebook
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+# Run Jupyter with no token/password
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=''", "--NotebookApp.password=''"]
