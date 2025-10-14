@@ -99,8 +99,14 @@ ChatGPT provided a Python function using .strip() and .split(). After applying t
 
 ### Run with Docker
 
-Alternatively, you can run the project inside Docker.
+- **Clone this repository**
+  
+      git clone https://github.com/zzziminger/president-speeches-analysis.git
 
+- **Navigate to the folder**
+  
+      cd president-speeches-analysis
+  
 - **Build the image**
 
       docker build -t psa .
