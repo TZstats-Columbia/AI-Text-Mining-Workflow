@@ -138,8 +138,3 @@ A single speech produced only 2–5 text chunks, so `UMAP(n_neighbors=5)` attemp
   - A topic summarization app analyzing how U.S. presidents discussed the economy over a user-selected time range.
   - A custom prompt app that allows users to run OpenAI API-based analyses on inaugural speeches interactively.
 
-
-
-
-Then access the Jupyter Notebook at:  
-[http://localhost:8888](http://localhost:8888)
