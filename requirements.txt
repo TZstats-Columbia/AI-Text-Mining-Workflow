@@ -25,3 +25,7 @@ ipywidgets==8.1.5
 # API or embeddings
 openai==1.102.0
 tiktoken==0.11.0
+requests==2.31.0
+
+# Gradio interface
+gradio==5.49.0
