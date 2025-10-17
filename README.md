@@ -17,6 +17,28 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
     Gradio.ipynb                                   # Jupyter Notebook for Gradio Interaction
 
 ---
+## Run with Docker
+
+- **Clone this repository**
+  
+      git clone https://github.com/zzziminger/president-speeches-analysis.git
+
+- **Navigate to the folder**
+  
+      cd president-speeches-analysis
+  
+- **Build the image**
+
+      docker build -t psa .
+
+- **Run the container**
+
+      docker run -p 8888:8888 psa
+
+Then access the Jupyter Notebook at:  
+[http://localhost:8888](http://localhost:8888)
+
+
 
 ## Project Workflow
 
@@ -97,24 +119,27 @@ ChatGPT provided a Python function using .strip() and .split(). After applying t
 
 ### 4. Gradio
 
+* **Prompt:**
+  Paste the BERTopic-related code and ask: “How to implement Gradio for a project using BERTopic?”
+* **Observation:**
+  UMAP caused an error when processing a single speech instead of the entire dataset.
+A single speech produced only 2–5 text chunks, so `UMAP(n_neighbors=5)` attempted to build a 5-nearest-neighbor graph on fewer than 5 samples, leading to an input size error.
 
-## Run with Docker
+* **Debugging Process:**
+  1. Pasted the error traceback into ChatGPT.
+  2. Solution: Pretrain BERTopic on the full dataset, then load the saved model in the Gradio app.
+  3. New error occurred: the pretrained HDBSCAN model inside BERTopic was not initialized with `prediction_data=True`, preventing `.transform()` from running on new inputs.
+     - Fix: Add `prediction_data=True` to the `HDBSCAN(...)` call during model training.
+  4. After fixing this, the Gradio app loaded successfully, but outputs remained identical for all inputs.
+     - Resolution: Added error handling, probability validation, and detailed progress logging. The app now handles irregular outputs from `BERTopic.transform()`, formats results cleanly in Markdown, and runs publicly with `share=True`.
+ 
+* **Additional Implementations:**
+  Built two additional Gradio apps using similar techniques:
+  - A topic summarization app analyzing how U.S. presidents discussed the economy over a user-selected time range.
+  - A custom prompt app that allows users to run OpenAI API-based analyses on inaugural speeches interactively.
 
-- **Clone this repository**
-  
-      git clone https://github.com/zzziminger/president-speeches-analysis.git
 
-- **Navigate to the folder**
-  
-      cd president-speeches-analysis
-  
-- **Build the image**
 
-      docker build -t psa .
-
-- **Run the container**
-
-      docker run -p 8888:8888 psa
 
 Then access the Jupyter Notebook at:  
 [http://localhost:8888](http://localhost:8888)
