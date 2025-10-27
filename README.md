@@ -21,7 +21,7 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
 
 - **Clone this repository**
   
-      git clone https://github.com/zzziminger/president-speeches-analysis.git
+      git clone https://github.com/TZstats-Columbia/president-speeches-analysis.git
 
 - **Navigate to the folder**
   
@@ -38,7 +38,31 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
 Then access the Jupyter Notebook at:  
 [http://localhost:8888](http://localhost:8888)
 
+---
+## Run locally
 
+- **Clone this repository**
+  
+      git clone https://github.com/TZstats-Columbia/president-speeches-analysis.git
+
+- **Navigate to the folder**
+  
+      cd president-speeches-analysis
+
+- **Create a virtual environment**
+  
+      python3.13 -m venv venv
+      source venv/bin/activate
+
+- **Install required packages**
+  
+      pip install -r requirements.txt
+  
+- **Run the project**
+  
+     python Gradio.py
+
+  
 
 ## Project Workflow
 
