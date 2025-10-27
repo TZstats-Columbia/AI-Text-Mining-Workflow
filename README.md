@@ -61,6 +61,7 @@ Then access the Jupyter Notebook at:
 - **Run the project**
   
       python Gradio.py
+      python main.ipynb
 
   
 
