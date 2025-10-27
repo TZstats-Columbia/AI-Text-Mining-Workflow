@@ -29,3 +29,7 @@ requests==2.31.0
 
 # Gradio interface
 gradio==5.49.0
+
+# File handling
+python-docx==1.1.0 
+PyPDF2==3.0.1
