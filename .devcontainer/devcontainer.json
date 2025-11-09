@@ -1,0 +1,27 @@
+{
+  "name": "Inaugural Speeches Analysis",
+  "dockerFile": "../dockerfile",           // Reuse your existing Dockerfile
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.vscode-jupyter-slideshow"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black"
+      }
+    }
+  },
+  "forwardPorts": [7860],
+  "portsAttributes": {
+    "7860": { "label": "Gradio App", "onAutoForward": "openPreview" }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  }
+}
