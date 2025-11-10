@@ -12,8 +12,7 @@ This repository contains tools and resources for analyzing U.S. Presidential ina
     main.ipynb                                     # Notebook for preprocessing, EDA, BERTopic training
     README.md                                      # Project documentation
     requirements.txt                               # Python dependencies
-    bertopic_presidents                            # Pretrained BERTopic model (full corpus)
-    bertopic_presidents_seeded                     # Seeded/fine-tuned BERTopic model
+    model_folder                                   # Pretrained BERTopic model (full corpus) + Seeded/fine-tuned BERTopic model
     chunks.csv                                     # Speech chunks (preprocessed for BERTopic)
     Gradio.py                                      # Notebook for Gradio interface
 
@@ -106,12 +105,44 @@ a. Load pretrained BERTopic model (`bertopic_presidents`) trained on the full co
 
 b. Parse seed words from the Gradio interface. Each line represents a seed topic with comma-separated keywords.
 
+Example seed words input:
+```
+Leadership, Integrity, Honor, Courage, Responsibility, Vision, Commitment, Duty, Service, Trust
+Democracy, Constitution, Republic, Liberty, Equality, Rights, Law, Citizenship, Governance, Representation
+Economy, Growth, Jobs, Opportunity, Industry, Trade, Investment, Taxes, Innovation, Prosperity
+Security, Defense, Safety, Military, Strategy, War, Protection, Peacekeeping, Preparedness, Alliances
+Diplomacy, Cooperation, Treaty, Partnership, Nations, Global, Alliance, International, Relations, Peace
+Community, Family, Generations, Support, Togetherness, Inclusion, Welfare, Compassion, Belonging, Solidarity
+Education, Schools, Teachers, Students, Learning, Research, Science, Knowledge, Discovery, Scholarship
+Environment, Climate, Nature, Conservation, Sustainability, Energy, Green, Pollution, Earth, Future
+Fairness, Diversity, Equity, Respect, Humanity, Tolerance, Justice, Inclusion, Kindness, Empathy
+Health, Medicine, Wellbeing, Care, Hospitals, Families, Support, PublicHealth, Healing, Recovery
+Hope, Resolve, Strength, Sacrifice, Progress, Renewal, Patriotism, Perseverance, Aspiration, Determination
+Reform, Change, Challenge, Creativity, Advancement, Transformation, Innovation, Improvement, Modernization, Renewal
+Stability, Understanding, Dialogue, Partnership, Trust, Collaboration, Cooperation, Peace, Accord, Consensus
+Accountability, Ethics, Guidance, Mentorship, Example, Transparency, Responsibility, Honesty, Integrity, Principle
+Development, Access, Empowerment, Advancement, Inclusion, Mobility, Opportunity, Capability, Progression, Potential
+Voice, Participation, Choice, Representation, Advocacy, Vote, Expression, Communication, Involvement, Consent
+Conservation, Green, Energy, Climate, Nature, Protection, Responsibility, Earth, Sustainability, Ecology
+Society, Children, Engagement, Community, Service, Togetherness, Citizenship, Belief, Harmony, Support
+Preparedness, Strategy, Protection, Resilience, Vigilance, Stability, Security, Strength, Readiness, Safeguard
+Patriotism, Heritage, Values, Freedom, Courage, Commitment, Hope, Honor, Allegiance, Unity
+Faith, Providence, Destiny, Union, Progress, Duty, Nation, Sacrifice, Morality, Blessing
+Labor, Enterprise, Industry, Workers, Prosperity, Reform, Growth, Opportunity, Commerce, Production
+People, Republic, Resolve, Leadership, Vision, Nation, Future, Character, Will, Determination
+War, Victory, Defense, Renewal, Peace, Sacrifice, Honor, Protection, Triumph, Valor
+Change, Promise, Dream, Advancement, Responsibility, Compassion, Hope, Renewal, Progress, Aspiration
+```
+Each line corresponds to a "seed topic" that guides BERTopic during fine-tuning.
+  
 c. Fine-tune on the full original corpus (`chunks.csv`) using the pretrained model:
   - Reuse components from the pretrained model: `vectorizer_model`; `umap_model; `hdbscan_model`
   - Pass the seed topics via the `seed_topic_list` argument in the constructor
   - Fits on the full corpus while merging topics guided by seeds
     
 d. Transform uploaded user files to assign them to the refined topics.
+
+Note: The fine-tuned BERTopic model saved under model_folder/bertopic_finetuned has been trained using the above seed words.
 
 **4. OpenAI Prompt Analysis**
 - Users can upload files and provide a custom prompt.
