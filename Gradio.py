@@ -4,9 +4,6 @@ import pandas as pd
 import numpy as np
 from bertopic import BERTopic
 from bertopic.representation import KeyBERTInspired
-from umap import UMAP
-from hdbscan import HDBSCAN
-from sklearn.feature_extraction.text import CountVectorizer
 import docx
 import PyPDF2
 import logging
@@ -171,9 +168,9 @@ def train_or_load_topic_model(seed_words_text, uploaded_chunks):
         seed_words_text = (seed_words_text or "").strip()
 
         # 1️⃣ Load pretrained model
-        if not os.path.exists("bertopic_presidents"):
-            return "⚠️ Pretrained model not found. Please ensure 'bertopic_presidents' exists."
-        base_model = BERTopic.load("bertopic_presidents")
+        if not os.path.exists("model_folder/bertopic_presidents"):
+            return f"⚠️ Pretrained model not found. Please ensure ''bertopic_presidents'' exists."
+        base_model = BERTopic.load("model_folder/bertopic_presidents")
 
         # CASE 1: No seed words → just transform uploaded chunks
         if not seed_words_text:
@@ -206,15 +203,15 @@ def train_or_load_topic_model(seed_words_text, uploaded_chunks):
             hdbscan_model=hdbscan_model,
             representation_model=KeyBERTInspired(),
             seed_topic_list=seed_topic_list,  # ✅ seeds go here
-            nr_topics="auto",
-            min_topic_size=30
+            nr_topics="None",
+            min_topic_size=5
         )
 
         # 6️⃣ Fit on full original corpus
         topics, probs = topic_model.fit_transform(all_docs)
 
         # 7️⃣ Save fine-tuned model
-        topic_model.save("bertopic_presidents_seeded")
+        topic_model.save("model_folder/bertopic_presidents_seeded")
 
         # 8️⃣ Transform uploaded chunks
         new_topics, _ = topic_model.transform(uploaded_chunks)
