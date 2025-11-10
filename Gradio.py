@@ -3,41 +3,29 @@ import gradio as gr
 import pandas as pd
 import numpy as np
 from bertopic import BERTopic
+from bertopic.representation import KeyBERTInspired
+from umap import UMAP
+from hdbscan import HDBSCAN
+from sklearn.feature_extraction.text import CountVectorizer
 import docx
 import PyPDF2
 import logging
 import os
 import time
-import random
-random.seed(42)
-np.random.seed(42)
+from collections import Counter, defaultdict
 
 
 # -----------------------------
-# ✅ Logging setup
+# ✅ Helpers
 # -----------------------------
-LOG_FILE = "gradio_app.log"
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-logging.info("🚀 Starting Gradio BERTopic + OpenAI app...")
+def ensure_list(x):
+    if isinstance(x, list):
+        return x
+    elif x is None:
+        return []
+    else:
+        return [x]
 
-# -----------------------------
-# ✅ Load pretrained BERTopic model
-# -----------------------------
-try:
-    logging.info("Loading pretrained BERTopic model...")
-    topic_model = BERTopic.load("bertopic_presidents")
-    logging.info(f"✅ Model loaded with {len(topic_model.get_topic_info())} topics.")
-except Exception as e:
-    logging.exception("❌ Error loading model.")
-    raise RuntimeError(f"Error loading BERTopic model: {e}")
-
-# -----------------------------
-# ✅ Helper functions
-# -----------------------------
 def extract_text_from_file(file):
     if file is None:
         return ""
@@ -84,6 +72,7 @@ def split_into_chunks(text, max_words=100):
     return chunks
 
 def merge_files_text(files):
+    files = ensure_list(files)
     all_texts = []
     for file in files:
         text = extract_text_from_file(file)
@@ -92,6 +81,7 @@ def merge_files_text(files):
     return "\n\n".join(all_texts)
 
 def summarize_files_metadata(files):
+    files = ensure_list(files)
     if not files:
         return "⚠️ No files uploaded yet."
     metadata = []
@@ -124,6 +114,7 @@ def summarize_files_metadata(files):
     return "\n\n".join(metadata)
 
 def download_metadata_csv(files):
+    files = ensure_list(files)
     if not files:
         return None
     data = []
@@ -148,7 +139,7 @@ def download_metadata_csv(files):
             elif ext == ".docx":
                 doc = docx.Document(filepath)
                 word_count = sum(len(p.text.split()) for p in doc.paragraphs)
-        except Exception as e:
+        except Exception:
             continue
         data.append({
             "Filename": name,
@@ -165,82 +156,139 @@ def download_metadata_csv(files):
     return csv_path
 
 # -----------------------------
-# ✅ Enhanced BERTopic analysis with optional seed topics
+# ✅ BERTopic Logic
 # -----------------------------
-def analyze_multiple_files(files, num_topics, seed_topics_text=None):
+def parse_seed_words(seed_words_text):
+    seed_topic_list = []
+    for line in seed_words_text.strip().split("\n"):
+        words = [w.strip() for w in line.split(",") if w.strip()]
+        if words:
+            seed_topic_list.append(words)
+    return seed_topic_list
+
+def train_or_load_topic_model(seed_words_text, uploaded_chunks):
     try:
-        if not files:
-            return "⚠️ Please upload at least one file."
+        seed_words_text = (seed_words_text or "").strip()
 
-        text = merge_files_text(files)
-        if not text.strip():
-            return "⚠️ Uploaded files contain no readable text."
+        # 1️⃣ Load pretrained model
+        if not os.path.exists("bertopic_presidents"):
+            return "⚠️ Pretrained model not found. Please ensure 'bertopic_presidents' exists."
+        base_model = BERTopic.load("bertopic_presidents")
 
-        chunks = split_into_chunks(text)
-        if len(chunks) == 0:
-            return "⚠️ Input too short — try longer documents."
+        # CASE 1: No seed words → just transform uploaded chunks
+        if not seed_words_text:
+            logging.info("🧠 Using pretrained model without seeds.")
+            topics, probs = base_model.transform(uploaded_chunks)
+            topic_info = base_model.get_topic_info()
+            return base_model, topic_info, topics
 
-        topics, probs = topic_model.transform(chunks)
-        if probs is None:
-            probs = np.zeros((len(chunks), len(set(topics))))
+        # CASE 2: Seed words provided → fine-tune on full pretrained corpus
+        logging.info("🌱 Fine-tuning pretrained BERTopic with seed words...")
 
-        probs_mean = np.mean(probs, axis=1) if probs.ndim == 2 else probs
-        topic_df = pd.DataFrame({"topic": topics, "prob": probs_mean})
-        summary = (
-            topic_df.groupby("topic")["prob"]
-            .mean()
-            .sort_values(ascending=False)
-            .head(num_topics)
-            .reset_index()
+        # 2️⃣ Load full original corpus (must exist)
+        if not os.path.exists("chunks.csv"):
+            return "⚠️ Original training chunks CSV not found ('chunks.csv')."
+        df_chunks = pd.read_csv("chunks.csv")
+        all_docs = df_chunks["speech_chunk"].tolist()
+
+        # 3️⃣ Parse seed words
+        seed_topic_list = parse_seed_words(seed_words_text)
+
+        # 4️⃣ Reuse pretrained components
+        vectorizer_model = base_model.vectorizer_model
+        umap_model = base_model.umap_model
+        hdbscan_model = base_model.hdbscan_model
+
+        # 5️⃣ Initialize new BERTopic with seeds
+        topic_model = BERTopic(
+            vectorizer_model=vectorizer_model,
+            umap_model=umap_model,
+            hdbscan_model=hdbscan_model,
+            representation_model=KeyBERTInspired(),
+            seed_topic_list=seed_topic_list,  # ✅ seeds go here
+            nr_topics="auto",
+            min_topic_size=30
         )
 
-        output_lines = []
+        # 6️⃣ Fit on full original corpus
+        topics, probs = topic_model.fit_transform(all_docs)
 
-        # --- Handle seed topics if provided ---
-        if seed_topics_text and seed_topics_text.strip():
-            seed_list = [s.strip() for s in seed_topics_text.split(",") if s.strip()]
-            output_lines.append(f"### 🌱 Seed Topics Provided:\n{', '.join(seed_list)}\n")
+        # 7️⃣ Save fine-tuned model
+        topic_model.save("bertopic_presidents_seeded")
 
-            all_topic_words = {
-                tid: [w for w, _ in topic_model.get_topic(tid)[:10]]
-                for tid in summary["topic"].tolist()
-                if tid != -1
-            }
+        # 8️⃣ Transform uploaded chunks
+        new_topics, _ = topic_model.transform(uploaded_chunks)
+        topic_info = topic_model.get_topic_info()
 
-            for seed in seed_list:
-                seed_related = []
-                for tid, words in all_topic_words.items():
-                    if any(seed.lower() in w.lower() or w.lower() in seed.lower() for w in words):
-                        seed_related.append(
-                            f"🔹 Topic {tid}: {', '.join(words[:5])}"
-                        )
-                if seed_related:
-                    output_lines.append(f"**Seed:** {seed}\n" + "\n".join(seed_related) + "\n")
-                else:
-                    output_lines.append(f"**Seed:** {seed} → not related.\n")
+        logging.info(f"✅ Fine-tuned model trained on full corpus with {len(seed_topic_list)} seed topics, "
+                     f"produced {len(topic_info)} total topics.")
 
-        # --- Regular top topic output ---
-        output_lines.append("### 🔝 Top Related Topics:\n")
-        for _, row in summary.iterrows():
-            tid = int(row["topic"])
-            prob = round(row["prob"], 3)
-            if tid == -1:
-                output_lines.append(f"🌀 Outlier topic (−1): confidence {prob}")
-            else:
-                words = ", ".join([w for w, _ in topic_model.get_topic(tid)[:5]])
-                output_lines.append(f"🔹 **Topic {tid}** — confidence {prob}\n   Keywords: {words}")
-
-        return "\n\n".join(output_lines)
+        return topic_model, topic_info, new_topics
 
     except Exception as e:
-        logging.exception("Error during topic analysis.")
-        return f"❌ **Error during topic analysis:**\n```\n{e}\n```"
+        logging.exception("Error during BERTopic fine-tuning.")
+        return f"❌ Error during BERTopic fine-tuning:\n{e}"
+
+
+
+def summarize_topics_with_chunk_counts(topic_model, topic_info, topics, chunks, num_topics=10):
+    """
+    Summarize topics sorted by relevance in uploaded chunks,
+    showing number of chunks and average words per chunk.
+    """
+    topic_counts = Counter([t for t in topics if t != -1])
+    if not topic_counts:
+        return "⚠️ No meaningful topics found in uploaded text."
+
+    # Count total non-outlier topics
+    total_topics = len([t for t in topic_info["Topic"] if t != -1])
+
+    # Map topic ID -> list of word counts of assigned chunks
+    topic_chunk_word_counts = defaultdict(list)
+    for t, chunk in zip(topics, chunks):
+        if t != -1:
+            topic_chunk_word_counts[t].append(len(chunk.split()))
+
+    # Sort topics by frequency in uploaded text
+    sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)
+
+    # Start output with total topics summary
+    output_lines = [f"### 🧩 Total Topics Found: {total_topics}\n"]
+
+    for tid, count in sorted_topics[:num_topics]:
+        topic_name = topic_info.loc[topic_info["Topic"] == tid, "Name"].values[0]
+        words = ", ".join([w for w, _ in topic_model.get_topic(tid)[:5]])
+        word_counts = topic_chunk_word_counts[tid]
+        avg_words = round(np.mean(word_counts))
+        output_lines.append(
+            f"🔹 **Topic {tid}** — {topic_name} "
+            f"({count} chunks, avg. {avg_words} words per chunk)\n"
+            f"   Keywords: {words}"
+        )
+
+    return "\n\n".join(output_lines)
+
+
+def train_and_analyze(files, seed_words_text, num_topics):
+    files = ensure_list(files)
+    if not files:
+        return "⚠️ Please upload at least one file."
+    text = merge_files_text(files)
+    chunks = split_into_chunks(text)
+    if len(chunks) == 0:
+        return "⚠️ Uploaded files contain no readable text."
+    result = train_or_load_topic_model(seed_words_text, chunks)
+    if isinstance(result, str):
+        return result
+    topic_model, topic_info, topics = result
+    return summarize_topics_with_chunk_counts(topic_model, topic_info, topics, chunks, num_topics)
 
 # -----------------------------
-# ✅ OpenAI analysis (unchanged)
+# ✅ OpenAI Prompt Analysis
 # -----------------------------
 def openai_prompt_analysis_with_key(files, prompt, api_key):
     from openai import OpenAI
+    files = ensure_list(files)
     client = OpenAI(api_key=api_key)
     text = merge_files_text(files)
     if not text.strip():
@@ -281,38 +329,24 @@ with gr.Blocks(title="🎙️ Text Analyzer (BERTopic + OpenAI)") as demo:
         value=None
     )
 
-    num_topics_slider = gr.Slider(
-        minimum=1, maximum=10, value=3, step=1, label="Number of Topics to Display", visible=False
-    )
-
-    seed_topics_input = gr.Textbox(
-        lines=2,
-        placeholder="Optional: Enter comma-separated seed topics (e.g., freedom, economy, rights)",
-        label="Seed Topics (optional)",
-        visible=False
-    )
-
-    prompt_input = gr.Textbox(
-        lines=3, placeholder="Write your prompt here (e.g., summarize the files)",
-        label="OpenAI Prompt", visible=False
-    )
+    num_topics_slider = gr.Slider(minimum=1, maximum=10, value=3, step=1, label="Number of Topics", visible=False)
+    prompt_input = gr.Textbox(lines=3, placeholder="Write your prompt here", label="OpenAI Prompt", visible=False)
     api_key_input = gr.Textbox(type="password", placeholder="Enter your OpenAI API Key", label="OpenAI API Key", visible=False)
+    seed_input = gr.Textbox(lines=4, placeholder="Enter seed words (each line: comma-separated keywords)", label="Seed Words (Optional)", visible=False)
 
     output_md = gr.Markdown(label="Analysis Output")
     analyze_button = gr.Button("🔍 Run Analysis")
     clear_button = gr.Button("🧹 Clear Result")
 
-    # Combined run function with progress
-    def run_analysis_with_progress(files, analysis_type, num_topics, seed_topics, prompt, api_key, progress=gr.Progress()):
+    def run_analysis_with_progress(files, analysis_type, num_topics, prompt, api_key, seed_words, progress=gr.Progress()):
+        files = ensure_list(files)
         if not files:
             return "⚠️ Please upload files first."
         if analysis_type == "BERTopic Topic Analysis":
-            text = merge_files_text(files)
-            chunks = split_into_chunks(text)
-            total_chunks = max(len(chunks), 1)
-            for i, chunk in enumerate(chunks):
-                progress((i+1)/total_chunks, desc=f"Processing chunk {i+1}/{total_chunks}")
-            return analyze_multiple_files(files, num_topics, seed_topics)
+            progress(0.3, desc="Training or loading BERTopic model...")
+            result = train_and_analyze(files, seed_words, num_topics)
+            progress(1.0, desc="Done")
+            return result
         elif analysis_type == "OpenAI Prompt Analysis":
             progress(0.5, desc="Sending request to OpenAI...")
             time.sleep(0.5)
@@ -324,43 +358,25 @@ with gr.Blocks(title="🎙️ Text Analyzer (BERTopic + OpenAI)") as demo:
 
     analyze_button.click(
         run_analysis_with_progress,
-        inputs=[file_input, analysis_type, num_topics_slider, seed_topics_input, prompt_input, api_key_input],
+        inputs=[file_input, analysis_type, num_topics_slider, prompt_input, api_key_input, seed_input],
         outputs=output_md
     )
 
-    def clear_output():
-        return ""
-    clear_button.click(clear_output, None, output_md)
+    clear_button.click(lambda: "", None, output_md)
 
     def toggle_controls(choice):
         if choice == "BERTopic Topic Analysis":
-            return (
-                gr.update(visible=True),
-                gr.update(visible=True),
-                gr.update(visible=False),
-                gr.update(visible=False),
-            )
+            return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)
         elif choice == "OpenAI Prompt Analysis":
-            return (
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=True),
-                gr.update(visible=True),
-            )
+            return gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False)
         else:
-            return (
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-            )
+            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
     analysis_type.change(
         toggle_controls,
         inputs=[analysis_type],
-        outputs=[num_topics_slider, seed_topics_input, prompt_input, api_key_input]
+        outputs=[num_topics_slider, prompt_input, api_key_input, seed_input]
     )
 
 if __name__ == "__main__":
     demo.launch(share=True)
-
