@@ -109,12 +109,12 @@ Visualization options in `main.ipynb`:
 
 The Gradio app supports user-provided seed words to narrow and guide topic generation. The workflow is as follows:
 
-a. Load pretrained BERTopic model (`bertopic_presidents`) trained on the full corpus of speech chunks. (The model is trained and saved in 'main.ipynb')
+- Load pretrained BERTopic model (`bertopic_presidents`) trained on the full corpus of speech chunks. (The model is trained and saved in 'main.ipynb')
 
-b. Parse seed words from the Gradio interface. Each line represents a seed topic with comma-separated keywords.
+- Parse seed words from the Gradio interface. Each line represents a seed topic with comma-separated keywords.
 
-Example seed words input:
-```
+  Example seed words input:
+  ```
 Leadership, Integrity, Honor, Courage, Responsibility, Vision, Commitment, Duty, Service, Trust
 Democracy, Constitution, Republic, Liberty, Equality, Rights, Law, Citizenship, Governance, Representation
 Economy, Growth, Jobs, Opportunity, Industry, Trade, Investment, Taxes, Innovation, Prosperity
@@ -140,10 +140,10 @@ Labor, Enterprise, Industry, Workers, Prosperity, Reform, Growth, Opportunity, C
 People, Republic, Resolve, Leadership, Vision, Nation, Future, Character, Will, Determination
 War, Victory, Defense, Renewal, Peace, Sacrifice, Honor, Protection, Triumph, Valor
 Change, Promise, Dream, Advancement, Responsibility, Compassion, Hope, Renewal, Progress, Aspiration
-```
-Each line corresponds to a "seed topic" that guides BERTopic during fine-tuning.
+  ```
+  Each line corresponds to a "seed topic" that guides BERTopic during fine-tuning.
   
-c. Fine-tune on the full original corpus (`chunks.csv`) using the pretrained model:
+- Fine-tune on the full original corpus (`chunks.csv`) using the pretrained model:
   - Reuse components from the pretrained model: `vectorizer_model`; `umap_model; `hdbscan_model`
   - Pass the seed topics via the `seed_topic_list` argument in the constructor
   - Fits on the full corpus while merging topics guided by seeds
