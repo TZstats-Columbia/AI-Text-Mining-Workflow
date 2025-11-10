@@ -115,31 +115,31 @@ The Gradio app supports user-provided seed words to narrow and guide topic gener
 
   Example seed words input:
   ```
-Leadership, Integrity, Honor, Courage, Responsibility, Vision, Commitment, Duty, Service, Trust
-Democracy, Constitution, Republic, Liberty, Equality, Rights, Law, Citizenship, Governance, Representation
-Economy, Growth, Jobs, Opportunity, Industry, Trade, Investment, Taxes, Innovation, Prosperity
-Security, Defense, Safety, Military, Strategy, War, Protection, Peacekeeping, Preparedness, Alliances
-Diplomacy, Cooperation, Treaty, Partnership, Nations, Global, Alliance, International, Relations, Peace
-Community, Family, Generations, Support, Togetherness, Inclusion, Welfare, Compassion, Belonging, Solidarity
-Education, Schools, Teachers, Students, Learning, Research, Science, Knowledge, Discovery, Scholarship
-Environment, Climate, Nature, Conservation, Sustainability, Energy, Green, Pollution, Earth, Future
-Fairness, Diversity, Equity, Respect, Humanity, Tolerance, Justice, Inclusion, Kindness, Empathy
-Health, Medicine, Wellbeing, Care, Hospitals, Families, Support, PublicHealth, Healing, Recovery
-Hope, Resolve, Strength, Sacrifice, Progress, Renewal, Patriotism, Perseverance, Aspiration, Determination
-Reform, Change, Challenge, Creativity, Advancement, Transformation, Innovation, Improvement, Modernization, Renewal
-Stability, Understanding, Dialogue, Partnership, Trust, Collaboration, Cooperation, Peace, Accord, Consensus
-Accountability, Ethics, Guidance, Mentorship, Example, Transparency, Responsibility, Honesty, Integrity, Principle
-Development, Access, Empowerment, Advancement, Inclusion, Mobility, Opportunity, Capability, Progression, Potential
-Voice, Participation, Choice, Representation, Advocacy, Vote, Expression, Communication, Involvement, Consent
-Conservation, Green, Energy, Climate, Nature, Protection, Responsibility, Earth, Sustainability, Ecology
-Society, Children, Engagement, Community, Service, Togetherness, Citizenship, Belief, Harmony, Support
-Preparedness, Strategy, Protection, Resilience, Vigilance, Stability, Security, Strength, Readiness, Safeguard
-Patriotism, Heritage, Values, Freedom, Courage, Commitment, Hope, Honor, Allegiance, Unity
-Faith, Providence, Destiny, Union, Progress, Duty, Nation, Sacrifice, Morality, Blessing
-Labor, Enterprise, Industry, Workers, Prosperity, Reform, Growth, Opportunity, Commerce, Production
-People, Republic, Resolve, Leadership, Vision, Nation, Future, Character, Will, Determination
-War, Victory, Defense, Renewal, Peace, Sacrifice, Honor, Protection, Triumph, Valor
-Change, Promise, Dream, Advancement, Responsibility, Compassion, Hope, Renewal, Progress, Aspiration
+  Leadership, Integrity, Honor, Courage, Responsibility, Vision, Commitment, Duty, Service, Trust
+  Democracy, Constitution, Republic, Liberty, Equality, Rights, Law, Citizenship, Governance, Representation
+  Economy, Growth, Jobs, Opportunity, Industry, Trade, Investment, Taxes, Innovation, Prosperity
+  Security, Defense, Safety, Military, Strategy, War, Protection, Peacekeeping, Preparedness, Alliances
+  Diplomacy, Cooperation, Treaty, Partnership, Nations, Global, Alliance, International, Relations, Peace
+  Community, Family, Generations, Support, Togetherness, Inclusion, Welfare, Compassion, Belonging, Solidarity
+  Education, Schools, Teachers, Students, Learning, Research, Science, Knowledge, Discovery, Scholarship
+  Environment, Climate, Nature, Conservation, Sustainability, Energy, Green, Pollution, Earth, Future
+  Fairness, Diversity, Equity, Respect, Humanity, Tolerance, Justice, Inclusion, Kindness, Empathy
+  Health, Medicine, Wellbeing, Care, Hospitals, Families, Support, PublicHealth, Healing, Recovery
+  Hope, Resolve, Strength, Sacrifice, Progress, Renewal, Patriotism, Perseverance, Aspiration, Determination
+  Reform, Change, Challenge, Creativity, Advancement, Transformation, Innovation, Improvement, Modernization, Renewal
+  Stability, Understanding, Dialogue, Partnership, Trust, Collaboration, Cooperation, Peace, Accord, Consensus
+  Accountability, Ethics, Guidance, Mentorship, Example, Transparency, Responsibility, Honesty, Integrity, Principle
+  Development, Access, Empowerment, Advancement, Inclusion, Mobility, Opportunity, Capability, Progression, Potential
+  Voice, Participation, Choice, Representation, Advocacy, Vote, Expression, Communication, Involvement, Consent
+  Conservation, Green, Energy, Climate, Nature, Protection, Responsibility, Earth, Sustainability, Ecology
+  Society, Children, Engagement, Community, Service, Togetherness, Citizenship, Belief, Harmony, Support
+  Preparedness, Strategy, Protection, Resilience, Vigilance, Stability, Security, Strength, Readiness, Safeguard
+  Patriotism, Heritage, Values, Freedom, Courage, Commitment, Hope, Honor, Allegiance, Unity
+  Faith, Providence, Destiny, Union, Progress, Duty, Nation, Sacrifice, Morality, Blessing
+  Labor, Enterprise, Industry, Workers, Prosperity, Reform, Growth, Opportunity, Commerce, Production
+  People, Republic, Resolve, Leadership, Vision, Nation, Future, Character, Will, Determination
+  War, Victory, Defense, Renewal, Peace, Sacrifice, Honor, Protection, Triumph, Valor
+  Change, Promise, Dream, Advancement, Responsibility, Compassion, Hope, Renewal, Progress, Aspiration
   ```
   Each line corresponds to a "seed topic" that guides BERTopic during fine-tuning.
   
