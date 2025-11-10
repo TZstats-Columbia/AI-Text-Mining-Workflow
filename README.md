@@ -148,7 +148,7 @@ The Gradio app supports user-provided seed words to narrow and guide topic gener
   - Pass the seed topics via the `seed_topic_list` argument in the constructor
   - Fits on the full corpus while merging topics guided by seeds
     
-d. Transform uploaded user files to assign them to the refined topics.
+- Transform uploaded user files to assign them to the refined topics.
 
 Note: The fine-tuned BERTopic model saved under model_folder/bertopic_finetuned has been trained using the above seed words.
 
