@@ -97,7 +97,15 @@ Visualization options in `main.ipynb`:
 - `visualize_barchart()`
 - `visualize_hierarchy()`
 
-**3. Handling Seed Words**
+**3. How Counting Chunks Works**
+- Each uploaded text file is split into chunks (e.g., 50–100 words each).
+- After transforming with the BERTopic model, each chunk is assigned to a topic or labeled as `-1` if it’s an outlier.
+- To identify the most relevant topics, the system counts how many chunks are assigned to each topic.
+  - Example: Topic 32 → 5 chunks, Topic 9 → 2 chunks, Topic -1 → 1 chunk 
+- The top N topics are selected based on the number of chunks, ensuring that frequently appearing topics in the text are prioritized.
+
+
+**4. Handling Seed Words**
 
 The Gradio app supports user-provided seed words to narrow and guide topic generation. The workflow is as follows:
 
