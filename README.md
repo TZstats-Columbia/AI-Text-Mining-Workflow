@@ -97,7 +97,7 @@ Visualization options in `main.ipynb`:
 - `visualize_barchart()`
 - `visualize_hierarchy()`
 
-**3. How Counting Chunks Works**
+**3. How Topics are Selected**
 - Each uploaded text file is split into chunks (e.g., 50–100 words each).
 - After transforming with the BERTopic model, each chunk is assigned to a topic or labeled as `-1` if it’s an outlier.
 - To identify the most relevant topics, the system counts how many chunks are assigned to each topic.
