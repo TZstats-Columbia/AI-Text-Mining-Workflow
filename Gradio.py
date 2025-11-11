@@ -11,7 +11,6 @@ import os
 import time
 from collections import Counter, defaultdict
 
-
 # -----------------------------
 # ✅ Helpers
 # -----------------------------
@@ -167,104 +166,68 @@ def train_or_load_topic_model(seed_words_text, uploaded_chunks):
     try:
         seed_words_text = (seed_words_text or "").strip()
 
-        # 1️⃣ Load pretrained model
         if not os.path.exists("model_folder/bertopic_presidents"):
             return f"⚠️ Pretrained model not found. Please ensure ''bertopic_presidents'' exists."
         base_model = BERTopic.load("model_folder/bertopic_presidents")
 
-        # CASE 1: No seed words → just transform uploaded chunks
         if not seed_words_text:
-            logging.info("🧠 Using pretrained model without seeds.")
             topics, probs = base_model.transform(uploaded_chunks)
             topic_info = base_model.get_topic_info()
             return base_model, topic_info, topics
 
-        # CASE 2: Seed words provided → fine-tune on full pretrained corpus
-        logging.info("🌱 Fine-tuning pretrained BERTopic with seed words...")
-
-        # 2️⃣ Load full original corpus (must exist)
         if not os.path.exists("chunks.csv"):
             return "⚠️ Original training chunks CSV not found ('chunks.csv')."
         df_chunks = pd.read_csv("chunks.csv")
         all_docs = df_chunks["speech_chunk"].tolist()
-
-        # 3️⃣ Parse seed words
         seed_topic_list = parse_seed_words(seed_words_text)
 
-        # 4️⃣ Reuse pretrained components
         vectorizer_model = base_model.vectorizer_model
         umap_model = base_model.umap_model
         hdbscan_model = base_model.hdbscan_model
 
-        # 5️⃣ Initialize new BERTopic with seeds
         topic_model = BERTopic(
             vectorizer_model=vectorizer_model,
             umap_model=umap_model,
             hdbscan_model=hdbscan_model,
             representation_model=KeyBERTInspired(),
-            seed_topic_list=seed_topic_list,  # ✅ seeds go here
+            seed_topic_list=seed_topic_list,
             nr_topics="None",
             min_topic_size=5
         )
 
-        # 6️⃣ Fit on full original corpus
         topics, probs = topic_model.fit_transform(all_docs)
-
-        # 7️⃣ Save fine-tuned model
         topic_model.save("model_folder/bertopic_presidents_seeded")
 
-        # 8️⃣ Transform uploaded chunks
         new_topics, _ = topic_model.transform(uploaded_chunks)
         topic_info = topic_model.get_topic_info()
-
-        logging.info(f"✅ Fine-tuned model trained on full corpus with {len(seed_topic_list)} seed topics, "
-                     f"produced {len(topic_info)} total topics.")
-
         return topic_model, topic_info, new_topics
 
     except Exception as e:
         logging.exception("Error during BERTopic fine-tuning.")
         return f"❌ Error during BERTopic fine-tuning:\n{e}"
 
-
-
 def summarize_topics_with_chunk_counts(topic_model, topic_info, topics, chunks, num_topics=10):
-    """
-    Summarize topics sorted by relevance in uploaded chunks,
-    showing number of chunks and average words per chunk.
-    """
     topic_counts = Counter([t for t in topics if t != -1])
     if not topic_counts:
         return "⚠️ No meaningful topics found in uploaded text."
 
-    # Count total non-outlier topics
     total_topics = len([t for t in topic_info["Topic"] if t != -1])
-
-    # Map topic ID -> list of word counts of assigned chunks
     topic_chunk_word_counts = defaultdict(list)
     for t, chunk in zip(topics, chunks):
         if t != -1:
             topic_chunk_word_counts[t].append(len(chunk.split()))
-
-    # Sort topics by frequency in uploaded text
     sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)
-
-    # Start output with total topics summary
     output_lines = [f"### 🧩 Total Topics Found: {total_topics}\n"]
-
     for tid, count in sorted_topics[:num_topics]:
         topic_name = topic_info.loc[topic_info["Topic"] == tid, "Name"].values[0]
         words = ", ".join([w for w, _ in topic_model.get_topic(tid)[:5]])
-        word_counts = topic_chunk_word_counts[tid]
-        avg_words = round(np.mean(word_counts))
+        avg_words = round(np.mean(topic_chunk_word_counts[tid]))
         output_lines.append(
             f"🔹 **Topic {tid}** — {topic_name} "
             f"({count} chunks, avg. {avg_words} words per chunk)\n"
             f"   Keywords: {words}"
         )
-
     return "\n\n".join(output_lines)
-
 
 def train_and_analyze(files, seed_words_text, num_topics):
     files = ensure_list(files)
@@ -331,35 +294,57 @@ with gr.Blocks(title="🎙️ Text Analyzer (BERTopic + OpenAI)") as demo:
     api_key_input = gr.Textbox(type="password", placeholder="Enter your OpenAI API Key", label="OpenAI API Key", visible=False)
     seed_input = gr.Textbox(lines=4, placeholder="Enter seed words (each line: comma-separated keywords)", label="Seed Words (Optional)", visible=False)
 
+    warning_box = gr.Markdown(visible=False)
     output_md = gr.Markdown(label="Analysis Output")
     analyze_button = gr.Button("🔍 Run Analysis")
     clear_button = gr.Button("🧹 Clear Result")
 
+    # ✅ Updated function with warning logic
     def run_analysis_with_progress(files, analysis_type, num_topics, prompt, api_key, seed_words, progress=gr.Progress()):
         files = ensure_list(files)
         if not files:
-            return "⚠️ Please upload files first."
+            return "⚠️ Please upload files first.", gr.update(visible=False, value="")
+
         if analysis_type == "BERTopic Topic Analysis":
             progress(0.3, desc="Training or loading BERTopic model...")
             result = train_and_analyze(files, seed_words, num_topics)
             progress(1.0, desc="Done")
-            return result
+
+            # Count topics displayed in output
+            displayed_topics = 0
+            if isinstance(result, str):
+                topic_pattern = re.findall(r"(?:Topic\s*\d+[:#]?|###\s*Topic\s*\d+)", result, flags=re.IGNORECASE)
+                displayed_topics = len(topic_pattern)
+
+            warning_msg = ""
+            if displayed_topics < num_topics:
+                warning_msg = (
+                    f"🟠 **Note:** Only **{displayed_topics} topics** were displayed in the summary "
+                    f"(you selected {num_topics}). Try reducing the number or providing more diverse text."
+                )
+
+            if warning_msg:
+                return result, gr.update(value=warning_msg, visible=True)
+            else:
+                return result, gr.update(value="", visible=False)
+
         elif analysis_type == "OpenAI Prompt Analysis":
             progress(0.5, desc="Sending request to OpenAI...")
             time.sleep(0.5)
             result = openai_prompt_analysis_with_key(files, prompt, api_key)
             progress(1.0, desc="Done")
-            return result
+            return result, gr.update(value="", visible=False)
+
         else:
-            return "⚠️ Please select an analysis type."
+            return "⚠️ Please select an analysis type.", gr.update(value="", visible=False)
 
     analyze_button.click(
         run_analysis_with_progress,
         inputs=[file_input, analysis_type, num_topics_slider, prompt_input, api_key_input, seed_input],
-        outputs=output_md
+        outputs=[output_md, warning_box]
     )
 
-    clear_button.click(lambda: "", None, output_md)
+    clear_button.click(lambda: ("", gr.update(value="", visible=False)), None, [output_md, warning_box])
 
     def toggle_controls(choice):
         if choice == "BERTopic Topic Analysis":
