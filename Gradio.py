@@ -299,52 +299,90 @@ with gr.Blocks(title="🎙️ Text Analyzer (BERTopic + OpenAI)") as demo:
     analyze_button = gr.Button("🔍 Run Analysis")
     clear_button = gr.Button("🧹 Clear Result")
 
+    with gr.Tabs(visible=False) as viz_tabs:
+        with gr.Tab("Intertopic Distance Map"):
+            intertopic_plot = gr.Plot()
+        with gr.Tab("Topic Word Scores"):
+            barchart_plot = gr.Plot()
+        with gr.Tab("Hierarchical Clustering"):
+            hierarchy_plot = gr.Plot()
+
+
     # ✅ Updated function with warning logic
     def run_analysis_with_progress(files, analysis_type, num_topics, prompt, api_key, seed_words, progress=gr.Progress()):
         files = ensure_list(files)
         if not files:
-            return "⚠️ Please upload files first.", gr.update(visible=False, value="")
+            return "", gr.update(value="", visible=False), gr.update(visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False)
 
         if analysis_type == "BERTopic Topic Analysis":
             progress(0.3, desc="Training or loading BERTopic model...")
-            result = train_and_analyze(files, seed_words, num_topics)
-            progress(1.0, desc="Done")
+            result = train_or_load_topic_model(seed_words, split_into_chunks(merge_files_text(files)))
+            progress(0.7, desc="Analyzing topics...")
 
-            # Count topics displayed in output
-            displayed_topics = 0
             if isinstance(result, str):
-                topic_pattern = re.findall(r"(?:Topic\s*\d+[:#]?|###\s*Topic\s*\d+)", result, flags=re.IGNORECASE)
-                displayed_topics = len(topic_pattern)
+                # error message
+                return result, gr.update(value="", visible=False), gr.update(visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False)
 
+            # Unpack returned values
+            topic_model, topic_info, topics = result
+
+            # Summarize topics
+            summary = summarize_topics_with_chunk_counts(topic_model, topic_info, topics, split_into_chunks(merge_files_text(files)), num_topics)
+
+            # Count displayed topics for warning
+            topic_lines = re.findall(r"(?:Topic\s*\d+[:#]?|###\s*Topic\s*\d+)", summary, flags=re.IGNORECASE)
+            displayed_topics = len(topic_lines)
             warning_msg = ""
             if displayed_topics < num_topics:
                 warning_msg = (
-                    f"🟠 **Note:** Only **{displayed_topics} topics** were displayed in the summary "
+                    f"🟠 **Note:** Only **{displayed_topics} topics** were displayed "
                     f"(you selected {num_topics}). Try reducing the number or providing more diverse text."
                 )
 
-            if warning_msg:
-                return result, gr.update(value=warning_msg, visible=True)
-            else:
-                return result, gr.update(value="", visible=False)
+            # Generate visualizations using the correct topic_model
+            intertopic_fig = topic_model.visualize_topics()
+            barchart_fig = topic_model.visualize_barchart(top_n_topics=None)
+            hierarchy_fig = topic_model.visualize_hierarchy()
+
+
+            return (
+                summary,
+                gr.update(value=warning_msg, visible=bool(warning_msg)),
+                gr.update(visible=True),
+                intertopic_fig,
+                barchart_fig,
+                hierarchy_fig
+            )
+
+
 
         elif analysis_type == "OpenAI Prompt Analysis":
             progress(0.5, desc="Sending request to OpenAI...")
             time.sleep(0.5)
             result = openai_prompt_analysis_with_key(files, prompt, api_key)
             progress(1.0, desc="Done")
-            return result, gr.update(value="", visible=False)
+            return result, gr.update(value="", visible=False), gr.update(visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False)
 
-        else:
-            return "⚠️ Please select an analysis type.", gr.update(value="", visible=False)
 
     analyze_button.click(
         run_analysis_with_progress,
         inputs=[file_input, analysis_type, num_topics_slider, prompt_input, api_key_input, seed_input],
-        outputs=[output_md, warning_box]
+        outputs=[output_md, warning_box, viz_tabs, intertopic_plot, barchart_plot, hierarchy_plot]
     )
 
-    clear_button.click(lambda: ("", gr.update(value="", visible=False)), None, [output_md, warning_box])
+    clear_button.click(
+        lambda: (
+            "",  # output_md
+            gr.update(value="", visible=False),  # warning_box
+            gr.update(visible=False),  # viz_tabs
+            None,  # intertopic_plot
+            None,  # barchart_plot
+            None   # hierarchy_plot
+        ),
+        None,
+        [output_md, warning_box, viz_tabs, intertopic_plot, barchart_plot, hierarchy_plot]
+    )
+
 
     def toggle_controls(choice):
         if choice == "BERTopic Topic Analysis":
