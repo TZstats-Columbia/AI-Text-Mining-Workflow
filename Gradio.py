@@ -247,26 +247,38 @@ def train_and_analyze(files, seed_words_text, num_topics):
 # ✅ OpenAI Prompt Analysis
 # -----------------------------
 def openai_prompt_analysis_with_key(files, prompt, api_key):
+    print("DEBUG API KEY:", api_key[:4], "******")
+
     from openai import OpenAI
-    files = ensure_list(files)
+
+    if not api_key or api_key.strip() == "":
+        return "⚠️ Please enter a valid OpenAI API key."
+
     client = OpenAI(api_key=api_key)
+
+    files = ensure_list(files)
     text = merge_files_text(files)
+
     if not text.strip():
         return "⚠️ Uploaded files contain no readable text."
+
     try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
+        response = client.responses.create(
+            model="gpt-4.1",
+            input=[
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"{prompt}\n\nUse the following text:\n{text}"}
+                {"role": "user", "content": f"{prompt}\n\nUse the following text:\n{text}"},
             ],
-            max_tokens=500,
+            max_output_tokens=500,
             temperature=0.5,
         )
-        return response.choices[0].message.content
+
+        return response.output_text
+
     except Exception as e:
         logging.exception("OpenAI API call failed.")
         return f"❌ Error calling OpenAI API:\n{e}"
+
 
 # -----------------------------
 # ✅ Gradio Interface
@@ -361,8 +373,14 @@ with gr.Blocks(title="🎙️ Text Analyzer (BERTopic + OpenAI)") as demo:
             time.sleep(0.5)
             result = openai_prompt_analysis_with_key(files, prompt, api_key)
             progress(1.0, desc="Done")
-            return result, gr.update(value="", visible=False), gr.update(visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False), gr.update(value="", visible=False)
-
+            return (
+                result,
+                gr.update(value="", visible=False),
+                gr.update(visible=False),
+                None,
+                None,
+                None
+            )
 
     analyze_button.click(
         run_analysis_with_progress,
